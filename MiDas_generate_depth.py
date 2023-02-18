@@ -118,7 +118,7 @@ def run(img_list, depth_list, model_path, model_type="dpt_beit_large_512", optim
 
         MkdirSimple(depth_image_file)
 
-        depth_image_file = depth_image_file.replace(".jpg","")
+        depth_image_file = depth_image_file.replace(".png","")
 
         if not side:
             write_depth(depth_image_file, prediction, grayscale, bits=2)
