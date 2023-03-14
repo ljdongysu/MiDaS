@@ -19,14 +19,14 @@ first_execution = True
 
 from tqdm.contrib import tzip
 
-def get_file_name(file_name, image_path):
+def get_file_name(file_name, image_path, dest_dir):
     with open(file_name, 'r') as f:
         file_lists = f.readlines()
     image_list = []
     depth_list = []
     for image_name in file_lists:
         image_full_path = os.path.join(image_path, image_name)
-        image_dest_path = image_full_path.replace("REMAP", "DEPTH/MiDas").split()[0]
+        image_dest_path = os.path.join(dest_dir, image_name)
         image_dest_path = image_dest_path.replace(".jpg", ".png")
         image_list.append(image_full_path)
         depth_list.append(image_dest_path)
@@ -73,7 +73,7 @@ def write_depth(path, depth, grayscale, bits=1):
 
     if not grayscale:
         out = cv2.applyColorMap(np.uint8(out), cv2.COLORMAP_INFERNO)
-
+    print("write depth image: {}".format(path + ".png"))
     if bits == 1:
         cv2.imwrite(path + ".png", out.astype("uint8"))
     elif bits == 2:
@@ -121,7 +121,7 @@ def run(img_list, depth_list, model_path, model_type="dpt_beit_large_512", optim
         depth_image_file = depth_image_file.replace(".png","")
 
         if not side:
-            write_depth(depth_image_file, prediction, grayscale, bits=2)
+            write_depth(depth_image_file.strip(), prediction, grayscale, bits=2)
 
     print("Finished")
 
@@ -130,12 +130,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-i', '--input_path',
-                        default=None,
                         help='Folder with input images (if no input path is specified, images are tried to be grabbed '
-                             'from camera)'
-                        )
+                             'from camera)', required=True)
 
     parser.add_argument("--file_name", help='image name list', required=True)
+
+    parser.add_argument('--dest_dir',
+                        help='Folder for save depth image', required=True)
 
     parser.add_argument('-t', '--model_type',
                         default='dpt_beit_large_512',
@@ -154,6 +155,6 @@ if __name__ == "__main__":
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
 
-    img_list, depth_list = get_file_name(args.file_name, args.input_path)
+    img_list, depth_list = get_file_name(args.file_name, args.input_path, args.dest_dir)
 
     run(img_list, depth_list, model_weights, args.model_type, grayscale=True)
